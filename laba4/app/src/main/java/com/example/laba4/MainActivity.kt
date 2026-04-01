@@ -62,15 +62,86 @@ class MainActivity : AppCompatActivity() {
             pickVideoLauncher.launch("video/*")
         }
 
-        // Далі ми додамо логіку для кнопок керування...
+        // Обробка завантаження з URL
+        btnPlayUrl.setOnClickListener {
+            val url = etUrl.text.toString()
+            if (url.isNotEmpty()) {
+                val uri = Uri.parse(url)
+                currentMediaUri = uri
+                isVideo = true // Для URL за замовчуванням будемо використовувати VideoView
+                prepareVideo(uri)
+            } else {
+                Toast.makeText(this, "Введіть URL посилання", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        btnPlay.setOnClickListener {
+            if (isVideo) {
+                videoView.start()
+            } else {
+                mediaPlayer?.start()
+            }
+        }
+
+        btnPause.setOnClickListener {
+            if (isVideo && videoView.isPlaying) {
+                videoView.pause()
+            } else if (!isVideo && mediaPlayer?.isPlaying == true) {
+                mediaPlayer?.pause()
+            }
+        }
+
+        btnStop.setOnClickListener {
+            // Замість повного stop() (який вимагає переініціалізації),
+            // ми робимо паузу і перемотуємо на початок - це безпечніший спосіб для лабораторної
+            if (isVideo) {
+                videoView.pause()
+                videoView.seekTo(0)
+            } else {
+                mediaPlayer?.pause()
+                mediaPlayer?.seekTo(0)
+            }
+        }
     }
 
-    // Заглушки для методів підготовки медіа, які ми напишемо на наступному кроці
+    // Підготовка аудіофайлу
     private fun prepareAudio(uri: Uri) {
-        Toast.makeText(this, "Аудіо вибрано", Toast.LENGTH_SHORT).show()
+        releaseMediaPlayer() // Звільняємо ресурси, якщо щось грало до цього
+        videoView.visibility = android.view.View.GONE // Ховаємо вікно відео
+
+        try {
+            mediaPlayer = MediaPlayer().apply {
+                setDataSource(applicationContext, uri)
+                prepare()
+            }
+            Toast.makeText(this, "Аудіо готове до відтворення", Toast.LENGTH_SHORT).show()
+        } catch (e: Exception) {
+            Toast.makeText(this, "Помилка завантаження аудіо", Toast.LENGTH_SHORT).show()
+        }
     }
 
+    // Підготовка відеофайлу
     private fun prepareVideo(uri: Uri) {
-        Toast.makeText(this, "Відео вибрано", Toast.LENGTH_SHORT).show()
+        releaseMediaPlayer() // Зупиняємо аудіо, якщо воно грало
+        videoView.visibility = android.view.View.VISIBLE // Показуємо вікно відео
+
+        videoView.setVideoURI(uri)
+        videoView.requestFocus()
+        Toast.makeText(this, "Відео готове. Натисніть Play", Toast.LENGTH_SHORT).show()
+    }
+
+    // Звільнення ресурсів аудіоплеєра
+    private fun releaseMediaPlayer() {
+        mediaPlayer?.let {
+            if (it.isPlaying) it.stop()
+            it.release()
+        }
+        mediaPlayer = null
+    }
+
+    // Очищення ресурсів при закритті додатку
+    override fun onDestroy() {
+        super.onDestroy()
+        releaseMediaPlayer()
     }
 }
