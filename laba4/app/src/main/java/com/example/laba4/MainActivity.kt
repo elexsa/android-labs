@@ -64,11 +64,12 @@ class MainActivity : AppCompatActivity() {
 
         // Обробка завантаження з URL
         btnPlayUrl.setOnClickListener {
-            val url = etUrl.text.toString()
+            // Додаємо .trim(), щоб прибрати випадкові пробіли
+            val url = etUrl.text.toString().trim()
             if (url.isNotEmpty()) {
                 val uri = Uri.parse(url)
                 currentMediaUri = uri
-                isVideo = true // Для URL за замовчуванням будемо використовувати VideoView
+                isVideo = true
                 prepareVideo(uri)
             } else {
                 Toast.makeText(this, "Введіть URL посилання", Toast.LENGTH_SHORT).show()
